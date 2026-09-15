@@ -1,6 +1,7 @@
 workflows:
   android-test:
     name: Android test APK
+    working_directory: .
     instance_type: mac_mini_m2
     max_build_duration: 45
     environment:
@@ -9,23 +10,46 @@ workflows:
       groups:
         - mobile_config
     scripts:
+      - name: Check repository files
+        script: |
+          set -eu
+          cd "$CM_BUILD_DIR"
+          for required in scripts/prepare_android.py scripts/test_prepare_android.py mobile/pubspec.yaml mobile/lib/main.dart; do
+            if [ ! -f "$required" ]; then
+              echo "Missing required repository file: $required"
+              echo "Upload the scripts/ and mobile/ folders beside codemagic.yaml in the GitHub branch being built."
+              exit 1
+            fi
+          done
       - name: Test Android setup helper
-        script: python3 -m unittest discover -s scripts -p 'test_*.py'
+        script: |
+          set -eu
+          cd "$CM_BUILD_DIR"
+          python3 "$CM_BUILD_DIR/scripts/test_prepare_android.py" -v
       - name: Check public app configuration
-        script: python3 scripts/prepare_android.py --check-config
+        script: |
+          set -eu
+          cd "$CM_BUILD_DIR"
+          python3 "$CM_BUILD_DIR/scripts/prepare_android.py" --check-config
       - name: Prepare Android platform and permissions
-        script: python3 scripts/prepare_android.py
+        script: |
+          set -eu
+          cd "$CM_BUILD_DIR"
+          python3 "$CM_BUILD_DIR/scripts/prepare_android.py"
       - name: Install Flutter dependencies
         script: |
-          cd mobile
+          set -eu
+          cd "$CM_BUILD_DIR/mobile"
           flutter pub get
       - name: Analyze application source
         script: |
-          cd mobile
+          set -eu
+          cd "$CM_BUILD_DIR/mobile"
           flutter analyze lib --no-fatal-infos --no-fatal-warnings
       - name: Build installable test APK
         script: |
-          cd mobile
+          set -eu
+          cd "$CM_BUILD_DIR/mobile"
           flutter build apk --debug \
             --dart-define="API_BASE_URL=${API_BASE_URL%/}" \
             --dart-define="SUPABASE_URL=${SUPABASE_URL%/}" \
