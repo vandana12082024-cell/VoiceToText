@@ -1,0 +1,9 @@
+.env
+**/.env
+**/__pycache__/
+**/.pytest_cache/
+**/.venv/
+mobile/.dart_tool/
+mobile/build/
+mobile/.flutter-plugins-dependencies
+mobile/pubspec.lock
